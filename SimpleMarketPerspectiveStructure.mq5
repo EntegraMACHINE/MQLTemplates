@@ -2,6 +2,10 @@
 #property link      "https://www.mql5.com"
 #property version   "1.00"
 
+#include "\..\..\Experts\Templates\PremiumDiscount.mqh"
+
+CPremiumDiscount PremiumDiscount;
+
 // Enums /////////////////////////////////////////////////////////////////////////////////////////////////////////
 enum ENUM_SWING_TYPE
 {
@@ -74,6 +78,8 @@ void OnTick()
    datetime currBarTime = iTime(Symbol(), PERIOD_CURRENT, 0);
    if(_lastBarTime != currBarTime)
    {
+      PremiumDiscount.ExpandPremiumDiscount();
+      
       int limit = _isFirstCalculation ? iBars(Symbol(), PERIOD_CURRENT) : 2;
       for(int i = limit; i >= 2; i--)
       {
@@ -115,6 +121,10 @@ void OnTick()
                   _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingLabel = label;
                }
                
+               if(ArraySize(_swingsLowArray) > 0 && ArraySize(_swingsLowArray) > 0) PremiumDiscount.UpdatePremiumDiscount(
+                     _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingTime,
+                     _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingValue,
+                     _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingValue);
                if(marketSubtype == SWING_HH && DrawBOS) DrawBOSLine(i, "HighBOS-", clrRed, STYLE_DOT, _swingsHighArray);
                
                _lastMarketSwingType = SWING_HIGH;
@@ -160,6 +170,10 @@ void OnTick()
                   _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingLabel = label;
                }
                
+               if(ArraySize(_swingsLowArray) > 0 && ArraySize(_swingsLowArray) > 0) PremiumDiscount.UpdatePremiumDiscount(
+                     _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingTime,
+                     _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingValue,
+                     _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingValue);
                if(marketSubtype == SWING_LL && DrawBOS) DrawBOSLine(i, "LowBOS-", clrRed, STYLE_DOT, _swingsLowArray);
                
                _lastMarketSwingType = SWING_LOW;

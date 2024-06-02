@@ -3,6 +3,10 @@
 #property version   "1.00"
 #property strict
 
+#include "\..\..\Experts\Templates\PremiumDiscount.mqh"
+
+CPremiumDiscount PremiumDiscount;
+
 // Enums /////////////////////////////////////////////////////////////////////////////////////////////////////////
 enum ENUM_SWING_TYPE
 {
@@ -102,6 +106,8 @@ void OnTick()
 {
    if(_lastLTFBarTime != iTime(Symbol(), PERIOD_CURRENT, 0))
    {
+      PremiumDiscount.ExpandPremiumDiscount();
+   
       int limit = _isFirstCalculation ? iBars(Symbol(), PERIOD_CURRENT) - 2 : 2;
       for(int i = limit; i >= 2; i--)
       {
@@ -158,6 +164,10 @@ void OnSwingHigh(int i, ENUM_SWING_TYPE &lasttemptype, ENUM_SWING_TYPE &lastsign
          UpdateSwingData(value, currTFTime, significantSubtype, label, significantarray);
       }   
     
+      if(ArraySize(_significantHTFLowsArray) > 0 && ArraySize(_significantHTFHighsArray) > 0 && period != PERIOD_CURRENT) PremiumDiscount.UpdatePremiumDiscount(
+            _significantHTFLowsArray[ArraySize(_significantHTFLowsArray) - 1].SwingTime,
+            _significantHTFLowsArray[ArraySize(_significantHTFLowsArray) - 1].SwingValue,
+            _significantHTFHighsArray[ArraySize(_significantHTFHighsArray) - 1].SwingValue);
       if(significantSubtype == SWING_HH) DrawBOSLine(i, "HighBOS-", significantarray, (period == PERIOD_CURRENT ? LTFBOSLineColor : HTFBOSLineColor), STYLE_DOT);
       
       lastsignificanttype = SWING_HIGH;
@@ -201,6 +211,10 @@ void OnSwingLow(int i, ENUM_SWING_TYPE &lasttemptype, ENUM_SWING_TYPE &lastsigni
          UpdateSwingData(value, currTFTime, significantSubtype, label, significantarray);
       }
     
+      if(ArraySize(_significantHTFLowsArray) > 0 && ArraySize(_significantHTFHighsArray) > 0 && period != PERIOD_CURRENT) PremiumDiscount.UpdatePremiumDiscount(
+            _significantHTFHighsArray[ArraySize(_significantHTFHighsArray) - 1].SwingTime,
+            _significantHTFHighsArray[ArraySize(_significantHTFHighsArray) - 1].SwingValue,
+            _significantHTFLowsArray[ArraySize(_significantHTFLowsArray) - 1].SwingValue);
       if(significantSubtype == SWING_LL) DrawBOSLine(i, "LowBOS-", significantarray, (period == PERIOD_CURRENT ? LTFBOSLineColor : HTFBOSLineColor), STYLE_DOT);
       
       lastsignificanttype = SWING_LOW;
