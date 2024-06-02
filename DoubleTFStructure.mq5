@@ -109,13 +109,13 @@ void OnTick()
          if(_lastHTFBarTime != currHTFTime)
          {
             if(IsSwingHigh(i, HTFTimeframe)) OnSwingHigh(i, _lastTempHTFSwingType, _lastSignificantHTFSwingType, _tempHTFHighsArray, _significantHTFHighsArray, HTFTimeframe);
-            else if(IsSwingLow(i, HTFTimeframe)) OnSwingLow(i, _lastTempHTFSwingType, _lastSignificantHTFSwingType, _tempHTFLowsArray, _significantHTFLowsArray, HTFTimeframe);
+            if(IsSwingLow(i, HTFTimeframe)) OnSwingLow(i, _lastTempHTFSwingType, _lastSignificantHTFSwingType, _tempHTFLowsArray, _significantHTFLowsArray, HTFTimeframe);
          
             _lastHTFBarTime = currHTFTime;
          }
          
          if(IsSwingHigh(i, PERIOD_CURRENT)) OnSwingHigh(i, _lastTempLTFSwingType, _lastSignificantLTFSwingType, _tempLTFHighsArray, _significantLTFHighsArray, PERIOD_CURRENT);
-         else if(IsSwingLow(i, PERIOD_CURRENT)) OnSwingLow(i, _lastTempLTFSwingType, _lastSignificantLTFSwingType, _tempLTFLowsArray, _significantLTFLowsArray, PERIOD_CURRENT);
+         if(IsSwingLow(i, PERIOD_CURRENT)) OnSwingLow(i, _lastTempLTFSwingType, _lastSignificantLTFSwingType, _tempLTFLowsArray, _significantLTFLowsArray, PERIOD_CURRENT);
       }
    
       _isFirstCalculation = false;

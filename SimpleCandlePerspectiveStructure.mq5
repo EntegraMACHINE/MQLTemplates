@@ -92,6 +92,7 @@ void OnTick()
                string label = DrawLabels ? DrawSwingLabel("Swing-", subtype, time, value, ANCHOR_LOWER, 8, "Arial", clrOrange) : "";
                _swingsArray[ArraySize(_swingsArray) - 1].SwingTime = time;
                _swingsArray[ArraySize(_swingsArray) - 1].SwingValue = value;
+               _swingsArray[ArraySize(_swingsArray) - 1].SwingLabel = label;
                if(subtype == SWING_HH && DrawBOS) DrawBOSLine(i, "HighBOS-", clrRed, STYLE_DOT, 3);
             }
             
@@ -116,6 +117,7 @@ void OnTick()
                string label = DrawLabels ? DrawSwingLabel("Swing-", subtype, time, value, ANCHOR_UPPER, 8, "Arial", clrOrange) : "";
                _swingsArray[ArraySize(_swingsArray) - 1].SwingTime = time;
                _swingsArray[ArraySize(_swingsArray) - 1].SwingValue = value;
+               _swingsArray[ArraySize(_swingsArray) - 1].SwingLabel = label;
                if(subtype == SWING_LL && DrawBOS) DrawBOSLine(i, "LowBOS-", clrRed, STYLE_DOT, 3);
             }
             
