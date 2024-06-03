@@ -4,8 +4,9 @@
 #property strict
 
 #include "\..\..\Experts\Templates\PremiumDiscount.mqh"
-
+#include "\..\..\Experts\Templates\FairValueGap.mqh"
 CPremiumDiscount PremiumDiscount;
+CFairValueGap FairValueGap;
 
 // Enums /////////////////////////////////////////////////////////////////////////////////////////////////////////
 enum ENUM_SWING_TYPE
@@ -106,7 +107,7 @@ void OnTick()
 {
    if(_lastLTFBarTime != iTime(Symbol(), PERIOD_CURRENT, 0))
    {
-      PremiumDiscount.ExpandPremiumDiscount();
+      PremiumDiscount.Expand();
    
       int limit = _isFirstCalculation ? iBars(Symbol(), PERIOD_CURRENT) - 2 : 2;
       for(int i = limit; i >= 2; i--)
@@ -158,16 +159,19 @@ void OnSwingHigh(int i, ENUM_SWING_TYPE &lasttemptype, ENUM_SWING_TYPE &lastsign
       }
       else if(lastsignificanttype == SWING_HIGH && value > significantarray[ArraySize(significantarray) - 1].SwingValue)
       {  
-         significantSubtype = GetSwingHighSubtype(value, significantarray);
+         significantSubtype = GetSwingHighSubtype(value, significantarray, 2);
          ObjectDelete(ChartID(), significantarray[ArraySize(significantarray) - 1].SwingLabel);
          string label = DrawSwingLabel(GetSwingPrefix(period), significantSubtype, currTFTime, value, ANCHOR_LOWER, GetSwingFontSize(period), GetSwingFont(period), GetSwingColor(period));
          UpdateSwingData(value, currTFTime, significantSubtype, label, significantarray);
       }   
     
-      if(ArraySize(_significantHTFLowsArray) > 0 && ArraySize(_significantHTFHighsArray) > 0 && period != PERIOD_CURRENT) PremiumDiscount.UpdatePremiumDiscount(
+      if(ArraySize(_significantHTFLowsArray) > 0 && ArraySize(_significantHTFHighsArray) > 0 && period != PERIOD_CURRENT) 
+      { 
+         PremiumDiscount.Update(
             _significantHTFLowsArray[ArraySize(_significantHTFLowsArray) - 1].SwingTime,
             _significantHTFLowsArray[ArraySize(_significantHTFLowsArray) - 1].SwingValue,
             _significantHTFHighsArray[ArraySize(_significantHTFHighsArray) - 1].SwingValue);
+      }
       if(significantSubtype == SWING_HH) DrawBOSLine(i, "HighBOS-", significantarray, (period == PERIOD_CURRENT ? LTFBOSLineColor : HTFBOSLineColor), STYLE_DOT);
       
       lastsignificanttype = SWING_HIGH;
@@ -210,11 +214,14 @@ void OnSwingLow(int i, ENUM_SWING_TYPE &lasttemptype, ENUM_SWING_TYPE &lastsigni
          string label = DrawSwingLabel(GetSwingPrefix(period), significantSubtype, currTFTime, value, ANCHOR_UPPER, GetSwingFontSize(period), GetSwingFont(period), GetSwingColor(period));
          UpdateSwingData(value, currTFTime, significantSubtype, label, significantarray);
       }
-    
-      if(ArraySize(_significantHTFLowsArray) > 0 && ArraySize(_significantHTFHighsArray) > 0 && period != PERIOD_CURRENT) PremiumDiscount.UpdatePremiumDiscount(
+      
+      if(ArraySize(_significantHTFLowsArray) > 0 && ArraySize(_significantHTFHighsArray) > 0 && period != PERIOD_CURRENT) 
+      {
+         PremiumDiscount.Update(
             _significantHTFHighsArray[ArraySize(_significantHTFHighsArray) - 1].SwingTime,
             _significantHTFHighsArray[ArraySize(_significantHTFHighsArray) - 1].SwingValue,
             _significantHTFLowsArray[ArraySize(_significantHTFLowsArray) - 1].SwingValue);
+      }
       if(significantSubtype == SWING_LL) DrawBOSLine(i, "LowBOS-", significantarray, (period == PERIOD_CURRENT ? LTFBOSLineColor : HTFBOSLineColor), STYLE_DOT);
       
       lastsignificanttype = SWING_LOW;
@@ -347,39 +354,6 @@ bool IsSwingLow(int index, ENUM_TIMEFRAMES period = PERIOD_CURRENT)
    double nextLow = iLow(Symbol(), period, index - 1);
    
    return prevLow > currLow && currLow < nextLow;
-}
-
-bool IsBullFVG(int index, ENUM_TIMEFRAMES period = PERIOD_CURRENT)
-{
-   double prevHigh = iHigh(Symbol(), period, index + 1);
-   double nextLow = iLow(Symbol(), period, index - 1);
-   
-   return nextLow > prevHigh;
-}
-
-bool IsBearFVG(int index, ENUM_TIMEFRAMES period = PERIOD_CURRENT)
-{
-   double prevLow = iLow(Symbol(), period, index + 1);
-   double nextHigh = iHigh(Symbol(), period, index - 1);
-   
-   return prevLow > nextHigh;
-}
-
-void DrawFVGRectangle(datetime time1, double price1, datetime time2, double price2, color fillcolor, color bordercolor)
-{
-   string fillName = "FairValueGapFill-" + TimeToString(time1);
-   DrawRectangle(fillName, time1, price1, time2, price2, fillcolor, 1, true);
-   
-   string borderName = "FairValueGapBorder-" + TimeToString(time1);
-   DrawRectangle(borderName, time1, price1, time2, price2, bordercolor, 1, false);
-}
-
-void DrawRectangle(string name, datetime time1, double price1, datetime time2, double price2, color clr, int width, bool fill)
-{
-   ObjectCreate(ChartID(), name, OBJ_RECTANGLE, 0, time1, price1, time2, price2);
-   ObjectSetInteger(ChartID(), name, OBJPROP_FILL, fill);
-   ObjectSetInteger(ChartID(), name, OBJPROP_WIDTH, width);
-   ObjectSetInteger(ChartID(), name, OBJPROP_COLOR, clr);
 }
 
 string GetSwingPrefix(ENUM_TIMEFRAMES period)

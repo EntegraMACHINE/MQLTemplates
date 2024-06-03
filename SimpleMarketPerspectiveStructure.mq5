@@ -78,7 +78,7 @@ void OnTick()
    datetime currBarTime = iTime(Symbol(), PERIOD_CURRENT, 0);
    if(_lastBarTime != currBarTime)
    {
-      PremiumDiscount.ExpandPremiumDiscount();
+      PremiumDiscount.Expand();
       
       int limit = _isFirstCalculation ? iBars(Symbol(), PERIOD_CURRENT) : 2;
       for(int i = limit; i >= 2; i--)
@@ -121,7 +121,7 @@ void OnTick()
                   _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingLabel = label;
                }
                
-               if(ArraySize(_swingsLowArray) > 0 && ArraySize(_swingsLowArray) > 0) PremiumDiscount.UpdatePremiumDiscount(
+               if(ArraySize(_swingsLowArray) > 0 && ArraySize(_swingsLowArray) > 0) PremiumDiscount.Update(
                      _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingTime,
                      _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingValue,
                      _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingValue);
@@ -170,7 +170,7 @@ void OnTick()
                   _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingLabel = label;
                }
                
-               if(ArraySize(_swingsLowArray) > 0 && ArraySize(_swingsLowArray) > 0) PremiumDiscount.UpdatePremiumDiscount(
+               if(ArraySize(_swingsLowArray) > 0 && ArraySize(_swingsLowArray) > 0) PremiumDiscount.Update(
                      _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingTime,
                      _swingsHighArray[ArraySize(_swingsHighArray) - 1].SwingValue,
                      _swingsLowArray[ArraySize(_swingsLowArray) - 1].SwingValue);
