@@ -10,11 +10,14 @@ string LevelsDescription[13] = { "0", "50%", "61.8%", "78.6%", "100%" };
 
 class CPremiumDiscount
 {
+   public: bool IsActive;
+
    protected: bool showBackground;
    protected: bool showFibonacci;
    
    public: CPremiumDiscount()
    {
+      IsActive = false;
       showBackground = true;
       showFibonacci = true;
    }
@@ -55,7 +58,17 @@ class CPremiumDiscount
          } 
       }
       
+      IsActive = true;
       ChartRedraw();
+   }
+   
+   public: void Delete()
+   {
+      ObjectDelete(ChartID(), FibonacciName);
+      ObjectDelete(ChartID(), PremiumRectName);
+      ObjectDelete(ChartID(), DiscountRectName);
+      
+      IsActive = false;
    }
    
    public: void Expand()

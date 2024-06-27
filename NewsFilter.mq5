@@ -8,11 +8,17 @@ const string JSON_LINK_END = ">JSON</a>";
 
 enum ENUM_NEWS_IMPACT
 {
-   IMPACT_ALL,
-   IMPACT_HOLIDAY,
-   IMPACT_LOW,
-   IMPACT_MEDIUM,
-   IMPACT_HIGH
+   IMPACT_ALL,       // All
+   IMPACT_HOLIDAY,   // Holiday
+   IMPACT_LOW,       // Low
+   IMPACT_MEDIUM,    // Medium
+   IMPACT_HIGH       // High
+};
+
+enum ENUM_NEWS_SYMBOL
+{
+   SYMBOL_CURRENT,   // Current
+   SYMBOL_ALL        // All
 };
 
 struct News
@@ -26,26 +32,22 @@ struct News
    string Url;
 };
 
-input int MinutesBeforeNews = 15;
-input int MinutesAfterNews = 5;
+input ENUM_NEWS_IMPACT NewsImpact = IMPACT_ALL;
+input ENUM_NEWS_SYMBOL NewsSymbol = SYMBOL_CURRENT;
+
+input int MinutesBeforeNews = 30;
+input int MinutesAfterNews = 30;
+
+input bool ShowNewsLabels = true;
+input bool ShowTradeNotAllowedZones = true;
 
 News news[];
 
 int OnInit()
 {   
-   GetNewsArray(NEWS_URL, news, IMPACT_ALL);
-   
-   for(int i = 0; i < ArraySize(news); i++)
-   {
-      color clr = clrLightGray;
-      if(news[i].Impact == IMPACT_LOW) clr = clrYellow;
-      if(news[i].Impact == IMPACT_MEDIUM) clr = clrOrange;
-      if(news[i].Impact == IMPACT_HIGH) clr = clrRed;
-      
-      ObjectCreate(ChartID(), "News-" + TimeToString(news[i].Date), OBJ_EVENT, 0, news[i].Date, 0);
-      ObjectSetString(ChartID(), "News-" + TimeToString(news[i].Date), OBJPROP_TEXT, news[i].Title + ". Impact: " + EnumImpactToString(news[i].Impact));
-      ObjectSetInteger(ChartID(), "News-" + TimeToString(news[i].Date), OBJPROP_COLOR, clr);
-   }
+   GetNewsArray(NEWS_URL, news, NewsImpact);
+   if(ShowNewsLabels) DrawNewsLabels(true, true, true, true);
+   if(ShowTradeNotAllowedZones) DrawTradeNotAllowedZones(false, false, true, true);
    
    return(INIT_SUCCEEDED);
 }
@@ -65,10 +67,66 @@ void OnDeinit(const int reason)
    ObjectsDeleteAll(ChartID());
 }
 
+void DrawNewsLabels(bool low, bool medium, bool high, bool holiday)
+{
+   for(int i = 0; i < ArraySize(news); i++)
+   {
+      if((news[i].Impact == IMPACT_LOW && low) || (news[i].Impact == IMPACT_MEDIUM && medium) || (news[i].Impact == IMPACT_HIGH && high) || (news[i].Impact == IMPACT_HOLIDAY && holiday))
+      {
+         color clr = GetNewDataColor(news[i].Impact);
+         
+         ObjectCreate(ChartID(), "News-" + TimeToString(news[i].Date), OBJ_EVENT, 0, news[i].Date, 0);
+         ObjectSetString(ChartID(), "News-" + TimeToString(news[i].Date), OBJPROP_TEXT, news[i].Country + " " + news[i].Title + ". Impact: " + EnumImpactToString(news[i].Impact));  
+         ObjectSetString(ChartID(), "News-" + TimeToString(news[i].Date), OBJPROP_TOOLTIP, news[i].Country + " " + news[i].Title + ". Impact: " + EnumImpactToString(news[i].Impact));
+         ObjectSetInteger(ChartID(), "News-" + TimeToString(news[i].Date), OBJPROP_COLOR, GetNewDataColor(news[i].Impact));
+      }   
+   }
+   
+   ChartRedraw(ChartID());
+}
+
+void DrawTradeNotAllowedZones(bool low, bool medium, bool high, bool holiday)
+{
+   for(int i = 0; i < ArraySize(news); i++)
+   {
+      if((news[i].Impact == IMPACT_LOW && low) || (news[i].Impact == IMPACT_MEDIUM && medium) || (news[i].Impact == IMPACT_HIGH && high))
+      {      
+         ObjectCreate(ChartID(), "TradeNotAllowedZone-" + TimeToString(news[i].Date), OBJ_RECTANGLE, 0, news[i].Date - MinutesBeforeNews * 60, 0, news[i].Date + MinutesAfterNews * 60, 100);
+         ObjectSetInteger(ChartID(), "TradeNotAllowedZone-" + TimeToString(news[i].Date), OBJPROP_COLOR, GetNewDataColor(news[i].Impact));
+         ObjectSetInteger(ChartID(), "TradeNotAllowedZone-" + TimeToString(news[i].Date), OBJPROP_FILL, true);
+      }
+      else if(news[i].Impact == IMPACT_HOLIDAY && holiday)
+      {
+         datetime startTime = iTime(Symbol(), PERIOD_D1, iBarShift(Symbol(), PERIOD_D1, news[i].Date));
+         datetime endTime = startTime + 86400;
+         ObjectCreate(ChartID(), "TradeNotAllowedZone-" + TimeToString(news[i].Date), OBJ_RECTANGLE, 0, startTime, 0, endTime, 100);
+         ObjectSetInteger(ChartID(), "TradeNotAllowedZone-" + TimeToString(news[i].Date), OBJPROP_COLOR, GetNewDataColor(news[i].Impact));
+         ObjectSetInteger(ChartID(), "TradeNotAllowedZone-" + TimeToString(news[i].Date), OBJPROP_FILL, true);
+      }
+   }
+}
+
+color GetNewDataColor(ENUM_NEWS_IMPACT impact)
+{
+   color clr = clrLightGray;
+   if(impact == IMPACT_LOW) clr = clrYellow;
+   if(impact == IMPACT_MEDIUM) clr = clrOrange;
+   if(impact == IMPACT_HIGH) clr = clrRed;
+
+   return clr;
+}
+
 bool IsTradeAllowedByNewsFilter(int secondsbefore, int secondsafter, ENUM_NEWS_IMPACT impact = IMPACT_ALL)
 {
    for(int i = 0; i < ArraySize(news); i++)
    {
+      if(impact == IMPACT_HOLIDAY)
+      {
+         datetime startTime = iTime(Symbol(), PERIOD_D1, iBarShift(Symbol(), PERIOD_D1, news[i].Date));
+         datetime endTime = startTime + 86400;
+         
+         if(TimeCurrent() >= startTime && TimeCurrent() < endTime) return false;
+      }
       if(impact == IMPACT_ALL || news[i].Impact == impact)
       {
          datetime startTime = (datetime)((int)news[i].Date - secondsbefore);
@@ -90,7 +148,7 @@ void UpdateNewsArray(string url, int intervalseconds, News &result[], ENUM_NEWS_
    _lastNewsUpdateTime = TimeCurrent();
 }
 
-void GetNewsArray(string url, News &result[], ENUM_NEWS_IMPACT impact = IMPACT_ALL)
+void GetNewsArray(string url, News &result[], ENUM_NEWS_IMPACT impact = IMPACT_ALL, ENUM_NEWS_SYMBOL symbol = SYMBOL_ALL)
 {
    if(MQLInfoInteger(MQL_TESTER) == 1) return;
    
@@ -112,7 +170,8 @@ void GetNewsArray(string url, News &result[], ENUM_NEWS_IMPACT impact = IMPACT_A
    for(int i = 0; i < ArraySize(newsArray); i++)
    {
       News data = GetNewsData(newsArray[i]);
-      if(impact == IMPACT_ALL || data.Impact == impact) ArrayAdd(result, data);
+      bool isNewsContainsSymbol = symbol == SYMBOL_ALL ? true : StringFind(Symbol(), data.Country) != -1;
+      if((impact == IMPACT_ALL || data.Impact == impact) && isNewsContainsSymbol) ArrayAdd(result, data);
    }
 }
 
@@ -178,7 +237,14 @@ datetime ConvertToDateTime(string &source[])
  
    string reformatted = StringFormat("%s %s", date, time);
    StringReplace(reformatted, "-", ".");
-   return StringToTime(reformatted);
+   datetime result = StringToTime(reformatted);
+   string timezoneParts[];
+   StringSplit(timezone, ':', timezoneParts);
+   int diff = (int)(TimeGMT() - (TimeCurrent() - TimeCurrent() % 60));
+   int offset = (int)StringToInteger(timezoneParts[0]);
+   result -= offset * 3600 - diff;
+   
+   return result;
 }
 
 string GetNewsUrl(string pagedata)
